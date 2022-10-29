@@ -9,7 +9,7 @@ contract FriendlyWaste{
         uint foodWaste;
         uint rank;
         string desc;
-        bool verified = false; // only admin can mark a company verified
+        bool verified; // only admin can mark a company verified
     }
 
     struct Company {
@@ -37,26 +37,26 @@ contract FriendlyWaste{
         _;
     }
 
-    function register(string name, string industry) public {
-        address companyAddress = msg.sender;
-        addrToCompany[companyAddress].name = name
-        addrToCompany[companyAddress].industry = industry
+    function register(string memory name, string memory industry) public {
+        Company storage company = addrToCompany[msg.sender];
+        company.name = name;
+        company.industry = industry;
 
     }
 
     function verify(address companyAddress) public onlyAdmin{
-        addrToCompany[companyAddress].verified = true
+        addrToStats[companyAddress].verified = true;
     }
 
-    function getCompanyStats(address companyAddress) public view returns(Stats stats) {
+    function getCompanyStats(address companyAddress) public view returns(Stats memory stats) {
         // Maybe check if they're verified too
-        stats = addrToStats[companyAddress]
+        return addrToStats[companyAddress];
 
     }
 
-    function updateCompanyStats(uint foodWaste, string desc) isVerified{
-        addrToStats[msg.sender].foodWaste = foodWaste  
-        addrToStats[msg.sender].desc = desc  
+    function updateCompanyStats(uint foodWaste, string memory desc) public isVerified{
+        addrToStats[msg.sender].foodWaste = foodWaste;  
+        addrToStats[msg.sender].desc = desc;
 
     }
 }
