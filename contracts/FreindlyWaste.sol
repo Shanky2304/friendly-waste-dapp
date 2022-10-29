@@ -38,7 +38,6 @@ contract FriendlyWaste{
     }
 
     function register(string name, string industry) public {
-
         address companyAddress = msg.sender;
         addrToCompany[companyAddress].name = name
         addrToCompany[companyAddress].industry = industry
