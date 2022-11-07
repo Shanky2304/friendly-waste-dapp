@@ -1,0 +1,10 @@
+{
+    "short_name": "Friendly Waste Dapp",
+    "name": "Friendly Waste Dapp",
+    "start_url": ".",
+    "display": "standalone",
+    "theme_color": "#000000",
+    "background_color": "#ffffff"
+  }
+  
+  

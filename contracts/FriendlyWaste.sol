@@ -6,6 +6,7 @@ import "hardhat/console.sol";
 contract FriendlyWaste{
 
     struct Stats {
+        // include history
         uint foodWaste;
         uint rank;
         string desc;
@@ -46,6 +47,7 @@ contract FriendlyWaste{
 
     function verify(address companyAddress) public onlyAdmin{
         addrToStats[companyAddress].verified = true;
+        console.log("");
     }
 
     function getCompanyStats(address companyAddress) public view returns(Stats memory stats) {
