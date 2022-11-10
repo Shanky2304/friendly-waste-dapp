@@ -5,6 +5,7 @@ import styled from "styled-components";
 import FriendlyWasteArtifact from "../artifacts/contracts/FriendlyWaste.sol/FriendlyWaste.json"
 import { Provider } from "../utils/provider";
 import { Divider } from "./Divider";
+import Button from 'react-bootstrap/Button';
 
 const StyledButton = styled.button`
   width: 180px;
@@ -94,8 +95,8 @@ export function FriendlyWaste(): ReactElement {
             window.alert('Smart Contract undefined!');
             return;
         }
-        if (!companyName || !companyIndustry) {
-            window.alert('Company Name and Industry are required!');
+        if (!companyName && !companyIndustry) {
+            window.alert('Both the Company name and industry type are required!');
             return;
         }
 
@@ -110,8 +111,6 @@ export function FriendlyWaste(): ReactElement {
         register(friendlyWasteContract);
     }
 
-
-
     return (
         <>
             <StyledButton
@@ -123,7 +122,17 @@ export function FriendlyWaste(): ReactElement {
                 onClick={handleContractDeploy}
             >
             Deploy FriendlyWaste Contract    
-            </StyledButton>  
+            </StyledButton>
+            {/* <Button 
+                variant="outline-success"
+                disabled={!active || friendlyWasteContract ? true : false}
+                style={{
+                    cursor: !active || friendlyWasteContract ? 'not-allowed' : 'pointer',
+                    borderColor: !active || friendlyWasteContract ? 'unset' : 'yellow'
+                }}
+                onClick={handleContractDeploy}
+            >Deploy FriendlyWaste Contract
+            </Button> */}
             <Divider/>
             <StyledContractDiv>
                 <StyledLabel>Contract Addr</StyledLabel>

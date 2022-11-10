@@ -40,6 +40,13 @@ contract FriendlyWaste{
         _;
     }
 
+    function verify(address companyAddress) public onlyAdmin{
+        Stats storage companyStats = addrToStats[companyAddress];
+        companyStats.verified = true;
+        console.log("");
+    }
+    
+    // for anyone: fake/real companies, robots, etc...
     function register(string memory name, string memory industry) public {
         // Required none of the values are null
 
@@ -50,11 +57,7 @@ contract FriendlyWaste{
 
     }
 
-    function verify(address companyAddress) public onlyAdmin{
-        addrToStats[companyAddress].verified = true;
-        console.log("");
-    }
-
+    // for consumers only
     function getCompanyStats(address companyAddress) public view returns(Stats memory) {
         // Maybe check if they're verified too
         return addrToStats[companyAddress];
@@ -76,9 +79,11 @@ contract FriendlyWaste{
 
     }
 
+    // for (verified) companies only
     function updateCompanyStats(uint foodWaste, string memory desc) public isVerified{
-        addrToStats[msg.sender].foodWaste = foodWaste;
-        addrToStats[msg.sender].desc = desc;
+        Stats storage companyStats = addrToStats[msg.sender];
+        companyStats.foodWaste = foodWaste;
+        companyStats.desc = desc;
 
     }
 }
