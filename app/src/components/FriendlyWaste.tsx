@@ -1,6 +1,6 @@
 import { useWeb3React } from "@web3-react/core";
 import { Contract, ethers, Signer } from "ethers";
-import {MouseEvent, ReactElement, useEffect, useState } from "react";
+import {ChangeEvent, MouseEvent, ReactElement, useEffect, useState } from "react";
 import styled from "styled-components";
 import FriendlyWasteArtifact from "../artifacts/contracts/FriendlyWaste.sol/FriendlyWaste.json"
 import { Provider } from "../utils/provider";
@@ -43,7 +43,7 @@ export function FriendlyWaste(): ReactElement {
     const [friendlyWasteContract, setFriendlyWasteContract] = useState<Contract>();
     const [friendlyWasteConAddr, setfriendlyWasteConAddr] = useState<string>('');
     const [companyName, setcompanyName] = useState<string>('');
-    const [companyIndustry, setcompanyIndustry] = useState<string>('');
+    const [companyIndustry, setcompanyIndustry] = useState('');
 
     useEffect((): void => {
         if(!library) {
@@ -84,26 +84,34 @@ export function FriendlyWaste(): ReactElement {
         deployContract(signer);
     }
 
-    function handleCompanyNameChange() {} {
+    function handleCompanyNameChange(event: ChangeEvent<HTMLInputElement>) {
+        event.preventDefault();
+        setcompanyName(event.target.value);
+    }
 
+    function handleCompanyIndustryChange(event: ChangeEvent<HTMLInputElement>) {
+        event.preventDefault();
+        setcompanyIndustry(event.target.value);
     }
 
     function handleCompanyRegister(event: MouseEvent<HTMLButtonElement>) {
         event.preventDefault();
 
         if(!friendlyWasteContract) {
-            window.alert('Smart Contract undefined!');
+            window.alert('Please proceed to deploy the FriendlyWaste Contract!');
             return;
         }
         if (!companyName && !companyIndustry) {
-            window.alert('Both the Company name and industry type are required!');
+            window.alert('Please provide both the company name and the industry type!');
             return;
         }
 
         async function register(fwContract: Contract): Promise<void> {
             try {
-                const registerTxn = await fwContract.register();
+                // pass in name and industry
+                const registerTxn = await fwContract.register(companyName, companyIndustry);
                 await registerTxn.wait();
+                window.alert(`This worked :), ${companyName}, ${companyIndustry}`)
             } catch (error:any) {
                 window.alert('Error occurred: ' + (error && error.message ? `\n\n${error.message}` : ''));
             }
@@ -123,28 +131,32 @@ export function FriendlyWaste(): ReactElement {
             >
             Deploy FriendlyWaste Contract    
             </StyledButton>
-            {/* <Button 
-                variant="outline-success"
-                disabled={!active || friendlyWasteContract ? true : false}
-                style={{
-                    cursor: !active || friendlyWasteContract ? 'not-allowed' : 'pointer',
-                    borderColor: !active || friendlyWasteContract ? 'unset' : 'yellow'
-                }}
-                onClick={handleContractDeploy}
-            >Deploy FriendlyWaste Contract
-            </Button> */}
             <Divider/>
             <StyledContractDiv>
                 <StyledLabel>Contract Addr</StyledLabel>
-                <div>
                     {friendlyWasteConAddr ? (friendlyWasteConAddr) : (<em>{`Contract not deployed`}</em>)}
-                </div>
-                <div></div>
-                <StyledLabel htmlFor="companyName">Enter company Name:</StyledLabel>
-                <StyledInput id="companyName" type="text"/>
-
-                <StyledButton>
+                <div>
+                <StyledLabel htmlFor="industry">Company Name: </StyledLabel>
+                <StyledInput 
+                    id="companyName" 
+                    type="text"
+                    onChange={handleCompanyNameChange}
+                />
+                <br></br>
+                <br></br>
+                <StyledLabel htmlFor="industry">Industry Type: </StyledLabel>
+                <StyledInput 
+                    id="companyName"
+                    type="text"
+                    onChange={handleCompanyIndustryChange}
+                />
+                <br></br>
+                <br></br>
+                <StyledButton
+                    onClick={handleCompanyRegister}>
+                    Register My Company
                 </StyledButton> 
+                </div>
             </StyledContractDiv>
             
         </>
