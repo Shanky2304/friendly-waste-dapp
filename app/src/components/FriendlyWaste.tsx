@@ -1,6 +1,6 @@
 import { useWeb3React } from "@web3-react/core";
 import { Contract, ethers, Signer } from "ethers";
-import {MouseEvent, ReactElement, useEffect, useState } from "react";
+import {ChangeEvent, MouseEvent, ReactElement, useEffect, useState } from "react";
 import styled from "styled-components";
 import FriendlyWasteArtifact from "../artifacts/contracts/FriendlyWaste.sol/FriendlyWaste.json"
 import { Provider } from "../utils/provider";
@@ -12,7 +12,7 @@ const StyledButton = styled.button`
   border-radius: 2rem;
   border-color: yellow;
   cursor: pointer;
-  place-self: center end;
+  place-self: center;
 `;
 
 const StyledContractDiv = styled.div`
@@ -43,6 +43,7 @@ export function FriendlyWaste(): ReactElement {
     const [friendlyWasteConAddr, setfriendlyWasteConAddr] = useState<string>('');
     const [companyName, setcompanyName] = useState<string>('');
     const [companyIndustry, setcompanyIndustry] = useState<string>('');
+    const [registeredCompanies, setregisteredCompanies] = useState<string>('');
 
     useEffect((): void => {
         if(!library) {
@@ -66,15 +67,16 @@ export function FriendlyWaste(): ReactElement {
                 FriendlyWasteArtifact.bytecode,
                 signer
             );
-
             try {
-                const friendlyWasteContract = await FriendlyWaste.deploy();
+                const fwContract = await FriendlyWaste.deploy();
 
-                await friendlyWasteContract.deployed();
+                await fwContract.deployed();
 
-                window.alert(`FriendlyWaste deployed to: ${friendlyWasteContract.address}`);
+                setFriendlyWasteContract(fwContract);
 
-                setfriendlyWasteConAddr(friendlyWasteContract.address);
+                window.alert(`FriendlyWaste deployed to: ${fwContract.address}`);
+
+                setfriendlyWasteConAddr(fwContract.address);
             } catch (error: any) {
                 window.alert('Error occurred: ' + (error && error.message ? `\n\n${error.message}` : ''));
             }
@@ -83,7 +85,17 @@ export function FriendlyWaste(): ReactElement {
         deployContract(signer);
     }
 
-    function handleCompanyNameChange() {} {
+    function handleCompanyNameChange(event: ChangeEvent<HTMLInputElement>) {
+
+        event.preventDefault();
+        setcompanyName(event.target.value);
+
+    }
+
+    function handleCompanyIndustryChange(event: ChangeEvent<HTMLInputElement>) {
+
+        event.preventDefault();
+        setcompanyIndustry(event.target.value);
 
     }
 
@@ -101,13 +113,35 @@ export function FriendlyWaste(): ReactElement {
 
         async function register(fwContract: Contract): Promise<void> {
             try {
-                const registerTxn = await fwContract.register();
+                const registerTxn = await fwContract.register(companyName, companyIndustry);
                 await registerTxn.wait();
+
+                window.alert(`Registered Successfully!`);
             } catch (error:any) {
                 window.alert('Error occurred: ' + (error && error.message ? `\n\n${error.message}` : ''));
             }
         }
         register(friendlyWasteContract);
+    }
+
+    function handleGetRegisteredCompanies(event: MouseEvent<HTMLButtonElement>) {
+        event.preventDefault();
+
+        if(!friendlyWasteContract) {
+            window.alert('Smart Contract undefined!');
+            return;
+        }
+        async function getCompanies(fwContract:Contract): Promise<void> {
+            try {
+                const companies = await fwContract.getRegisteredCompanies();
+                setregisteredCompanies(companies);
+                window.alert(`Succesfully retrieved!`);
+            } catch (error: any) {
+                window.alert('Error occurred: ' + (error && error.message ? `\n\n${error.message}` : ''));
+            }
+            
+        }
+        getCompanies(friendlyWasteContract);
     }
 
 
@@ -123,7 +157,7 @@ export function FriendlyWaste(): ReactElement {
                 onClick={handleContractDeploy}
             >
             Deploy FriendlyWaste Contract    
-            </StyledButton>  
+            </StyledButton>
             <Divider/>
             <StyledContractDiv>
                 <StyledLabel>Contract Addr</StyledLabel>
@@ -132,12 +166,39 @@ export function FriendlyWaste(): ReactElement {
                 </div>
                 <div></div>
                 <StyledLabel htmlFor="companyName">Enter company Name:</StyledLabel>
-                <StyledInput id="companyName" type="text"/>
-
-                <StyledButton>
-                </StyledButton> 
-            </StyledContractDiv>
-            
+                <StyledInput id="companyName" 
+                type="text"
+                onChange={handleCompanyNameChange}/>
+                <StyledLabel htmlFor="companyIndustry">Enter company Name:</StyledLabel>
+                <StyledInput id="companyIndustry" 
+                type="text"
+                onChange={handleCompanyIndustryChange}/>
+            </StyledContractDiv>      
+            <StyledButton
+                disabled={!active || !friendlyWasteContract ? true : false}
+                style={{
+                    cursor: !active || !friendlyWasteContract ? 'not-allowed' : 'pointer',
+                    borderColor: !active || !friendlyWasteContract ? 'unset' : 'yellow'
+                }}
+                onClick={handleCompanyRegister}
+            >
+            Register Company    
+            </StyledButton>
+            <Divider/>
+            <StyledButton 
+                disabled={!active || !friendlyWasteContract ? true : false}
+                style={{
+                    cursor: !active || !friendlyWasteContract ? 'not-allowed' : 'pointer',
+                    borderColor: !active || !friendlyWasteContract ? 'unset' : 'yellow'
+                }}
+                onClick={handleGetRegisteredCompanies}
+            >
+            Get Registered Companies
+            </StyledButton>
+            <StyledLabel htmlFor="registeredCompanies"> Registered Companies:</StyledLabel>
+            <div>
+            {registeredCompanies ? registeredCompanies : <em>{`<No data>`}</em>}
+            </div>
         </>
     );
 }
