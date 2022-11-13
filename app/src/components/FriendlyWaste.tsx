@@ -1,4 +1,5 @@
 import { useWeb3React } from "@web3-react/core";
+import { use } from "chai";
 import { Contract, ethers, Signer } from "ethers";
 import {ChangeEvent, MouseEvent, ReactElement, useEffect, useState } from "react";
 import styled from "styled-components";
@@ -44,6 +45,9 @@ export function FriendlyWaste(): ReactElement {
     const [companyName, setcompanyName] = useState<string>('');
     const [companyIndustry, setcompanyIndustry] = useState<string>('');
     const [registeredCompanies, setregisteredCompanies] = useState<string[]>([]);
+    const [companyFoodWaste, setCompanyFoodWaste] = useState<string>();
+    const [companyDesc, setCompanyDesc] = useState<string>();
+    const [addrToVerify, setAddrToVerify] = useState<string>();
 
     useEffect((): void => {
         if(!library) {
@@ -93,10 +97,23 @@ export function FriendlyWaste(): ReactElement {
     }
 
     function handleCompanyIndustryChange(event: ChangeEvent<HTMLInputElement>) {
-
         event.preventDefault();
         setcompanyIndustry(event.target.value);
+    }
 
+    function handleCompanyFoodWasteChange(event: ChangeEvent<HTMLInputElement>) {
+        event.preventDefault();
+        setCompanyFoodWaste(event.target.value);
+    }
+
+    function handleCompanyDescChange(event: ChangeEvent<HTMLInputElement>) {
+        event.preventDefault();
+        setCompanyDesc(event.target.value);
+    }
+
+    function handleAddrToVerifyChange(event: ChangeEvent<HTMLInputElement>) {
+        event.preventDefault();
+        setAddrToVerify(event.target.value);
     }
 
     function handleCompanyRegister(event: MouseEvent<HTMLButtonElement>) {
@@ -149,7 +166,47 @@ export function FriendlyWaste(): ReactElement {
         getCompanies(friendlyWasteContract);
     }
 
+    function handleUpdateStats(event: MouseEvent<HTMLButtonElement>) {
+        event.preventDefault();
 
+        if(!friendlyWasteContract || !registeredCompanies) {
+            window.alert('Smart Contract or registeredCompanies undefined!');
+            return;
+        }
+
+        async function updateStats(fwContract:Contract): Promise<void> {
+            try {
+                const updateStatsTxn = await fwContract.updateCompanyStats(companyFoodWaste, companyDesc);
+                await updateStatsTxn.wait();
+
+                window.alert(`Stats updated successfully!`);
+            } catch (error: any) {
+                window.alert('Error occurred: ' + (error && error.message ? `\n\n${error.message}` : ''));
+            }
+            
+        }
+        updateStats(friendlyWasteContract);
+    }
+
+    function handleVerify(event: MouseEvent<HTMLButtonElement>) {
+        if(!friendlyWasteContract || !registeredCompanies) {
+            window.alert('Smart Contract or registeredCompanies undefined!');
+            return;
+        }
+
+        async function verify(fwContract:Contract): Promise<void> {
+            try {
+                const updateStatsTxn = await fwContract.verify(addrToVerify);
+                await updateStatsTxn.wait();
+
+                window.alert(`Verified successfully!`);
+            } catch (error: any) {
+                window.alert('Error occurred: ' + (error && error.message ? `\n\n${error.message}` : ''));
+            }
+            
+        }
+        verify(friendlyWasteContract);
+    }
 
     return (
         <>
@@ -209,6 +266,47 @@ export function FriendlyWaste(): ReactElement {
                     ))
                 }
             </div>
+            <Divider/>
+            <StyledContractDiv>
+                <StyledLabel htmlFor="addrToVerify">Enter addr to verify:</StyledLabel>
+                <StyledInput id="addrToVerify" 
+                type="text"
+                onChange={handleAddrToVerifyChange}/>
+            </StyledContractDiv>
+            <StyledButton
+                disabled={!active || !friendlyWasteContract ? true : false}
+                style={{
+                    cursor: !active || !friendlyWasteContract ? 'not-allowed' : 'pointer',
+                    borderColor: !active || !friendlyWasteContract ? 'unset' : 'yellow'
+                }}
+                onClick={handleVerify}
+            >
+            Verify   
+            </StyledButton>
+            <Divider/>
+            <StyledContractDiv>
+                <StyledLabel htmlFor="companyFoodWaste">Enter company foodWaste(in Tons):</StyledLabel>
+                <StyledInput id="companyFoodWaste" 
+                type="text"
+                onChange={handleCompanyFoodWasteChange}/>
+                <div></div>
+                <StyledLabel htmlFor="companyDesc">Enter Desc:</StyledLabel>
+                <StyledInput id="companyDesc" 
+                type="text"
+                onChange={handleCompanyDescChange}/>
+            </StyledContractDiv>
+            <div></div>
+            <StyledButton
+                disabled={!active || !friendlyWasteContract ? true : false}
+                style={{
+                    cursor: !active || !friendlyWasteContract ? 'not-allowed' : 'pointer',
+                    borderColor: !active || !friendlyWasteContract ? 'unset' : 'yellow'
+                }}
+                onClick={handleUpdateStats}
+            >
+            Update Stats    
+            </StyledButton>
+
         </>
     );
 }
