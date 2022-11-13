@@ -43,7 +43,7 @@ export function FriendlyWaste(): ReactElement {
     const [friendlyWasteConAddr, setfriendlyWasteConAddr] = useState<string>('');
     const [companyName, setcompanyName] = useState<string>('');
     const [companyIndustry, setcompanyIndustry] = useState<string>('');
-    const [registeredCompanies, setregisteredCompanies] = useState<string>('');
+    const [registeredCompanies, setregisteredCompanies] = useState<string[]>([]);
 
     useEffect((): void => {
         if(!library) {
@@ -102,6 +102,7 @@ export function FriendlyWaste(): ReactElement {
     function handleCompanyRegister(event: MouseEvent<HTMLButtonElement>) {
         event.preventDefault();
 
+        console.log('Sending request to register company');
         if(!friendlyWasteContract) {
             window.alert('Smart Contract undefined!');
             return;
@@ -134,7 +135,11 @@ export function FriendlyWaste(): ReactElement {
         async function getCompanies(fwContract:Contract): Promise<void> {
             try {
                 const companies = await fwContract.getRegisteredCompanies();
-                setregisteredCompanies(companies);
+                console.log('Companies:'+(companies));
+                const compList: string[] = [];
+                companies.forEach((ele: string) => compList.push(ele));
+                console.log('RegCompanies:'+ typeof compList);
+                setregisteredCompanies(compList);
                 window.alert(`Succesfully retrieved!`);
             } catch (error: any) {
                 window.alert('Error occurred: ' + (error && error.message ? `\n\n${error.message}` : ''));
@@ -169,7 +174,8 @@ export function FriendlyWaste(): ReactElement {
                 <StyledInput id="companyName" 
                 type="text"
                 onChange={handleCompanyNameChange}/>
-                <StyledLabel htmlFor="companyIndustry">Enter company Name:</StyledLabel>
+                <div></div>
+                <StyledLabel htmlFor="companyIndustry">Enter company Industry:</StyledLabel>
                 <StyledInput id="companyIndustry" 
                 type="text"
                 onChange={handleCompanyIndustryChange}/>
@@ -197,7 +203,11 @@ export function FriendlyWaste(): ReactElement {
             </StyledButton>
             <StyledLabel htmlFor="registeredCompanies"> Registered Companies:</StyledLabel>
             <div>
-            {registeredCompanies ? registeredCompanies : <em>{`<No data>`}</em>}
+                {
+                    registeredCompanies.map((item) => (
+                        <li key={item.toString()}>{item}</li>
+                    ))
+                }
             </div>
         </>
     );
