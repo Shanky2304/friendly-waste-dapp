@@ -13,6 +13,7 @@ const StyledButton = styled.button`
   border-color: yellow;
   cursor: pointer;
   place-self: center;
+  color:#B5FED9l
 `;
 
 const StyledContractDiv = styled.div`
@@ -26,6 +27,7 @@ const StyledContractDiv = styled.div`
 
 const StyledLabel = styled.label`
   font-weight: bold;
+  color:#022B3A;
 `;
 
 const StyledInput = styled.input`

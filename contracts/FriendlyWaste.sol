@@ -5,33 +5,43 @@ import "hardhat/console.sol";
 
 contract FriendlyWaste{
 
+    // Structure to store company stats
     struct Stats {
-        // include history
         uint foodWaste;
-        uint rank;
-        string desc;
+        string name;
+        //string desc;
         bool verified; // only admin can mark a company verified
     }
 
+    /*
+    * A struct to record facts about the company 
+    * which can be used to segregate them in future like industry
+    */
     struct Company {
         string name;
         string industry;
     }
 
+    // Set in the contructor
     address admin;
 
+    // List of addresses of all the registered companies
     address[] registeredCompanies;
 
+    // Mappings to store above structures using the company address as key
     mapping (address => Company) addrToCompany;
     mapping (address => Stats) addrToStats;
 
+    /* 
+    * Called during deploy to set the admin address
+    */
     constructor () {
         admin = msg.sender;
     }
 
     modifier onlyAdmin() 
     {
-        require(msg.sender == admin);
+        require(msg.sender == admin, "Only the admin can make this request!");
         _;
     }
 
@@ -40,6 +50,9 @@ contract FriendlyWaste{
         _;
     }
 
+    /*
+    * Method used to register a company
+    */
     function register(string memory name, string memory industry) public {
         // Required none of the values are null
 
@@ -50,35 +63,36 @@ contract FriendlyWaste{
 
     }
 
+    /*
+    * Method used to mark a company verified. Can only be called by the admin.
+    */
     function verify(address companyAddress) public onlyAdmin{
         addrToStats[companyAddress].verified = true;
-        console.log("");
+        //console.log("");
     }
 
-    function getCompanyStats(address companyAddress) public view returns(Stats memory) {
+    /*
+    * Method used to read company stats from the chain. Incurs no cost is marked a 'view'.
+    */
+    function getCompanyStats(address companyAddress) public isVerified view returns(Stats memory) {
         // Maybe check if they're verified too
         return addrToStats[companyAddress];
-
     }
 
+    /*
+    * Method used to read company addresses from the chain. Incurs no cost is marked a 'view'.
+    */
     function getRegisteredCompanies() public view returns(address[] memory) {
         return registeredCompanies;
     }
 
-    function getAllCompanyStats() public view returns(Stats memory stats) {
-        // Stats[] memory statsList;
-
-        // uint i = 0;
-        // uint len = 0;
-        // for (i = 0; i < registeredCompanies.length; i -= 1) {  //for loop example
-        //  statsList.push(addrToStats[registeredCompanies[i]]);         
-        // }
-
-    }
-
-    function updateCompanyStats(uint foodWaste, string memory desc) public isVerified{
+    /*
+    * Method used by verifed companies to report their stats.
+    */
+    function updateCompanyStats(uint foodWaste) public isVerified {
         addrToStats[msg.sender].foodWaste = foodWaste;
-        addrToStats[msg.sender].desc = desc;
+        //addrToStats[msg.sender].desc = addrToCompany[msg.sender].name;
+        addrToStats[msg.sender].name = addrToCompany[msg.sender].name;
 
     }
 }
