@@ -11,6 +11,10 @@ import './tasks/deploy';
 
 dotenv.config();
 
+const ALCHEMY_API_KEY = "QuuaBZfB7WD37eSV8W4li4vq7jYJbbNJ";
+
+const GOERLI_PRIVATE_KEY = "fb30a71773d92f14c4f6b249b0b12557c93ff924e2c5e916d44efd9eba9544d3";
+
 const config: HardhatUserConfig = {
   solidity: '0.8.17',
   paths: {
@@ -22,6 +26,10 @@ const config: HardhatUserConfig = {
         auto: false,
         interval: 1000
       }
+    },
+    goerli: {
+      url: `https://eth-goerli.alchemyapi.io/v2/${ALCHEMY_API_KEY}`,
+      accounts: [GOERLI_PRIVATE_KEY]
     },
     ropsten: {
       url: process.env.ROPSTEN_URL || '',

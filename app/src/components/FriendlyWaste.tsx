@@ -55,6 +55,7 @@ export function FriendlyWaste(): ReactElement {
     //const [companyDesc, setCompanyDesc] = useState<string>();
     const [addrToVerify, setAddrToVerify] = useState<string>();
     const [companyStats, setCompanyStats] = useState<Stats[]>([]);
+    const [sortedCompanyStats, setSortedCompanyStats] = useState<Stats[]>([]);
 
     useEffect((): void => {
         if(!library) {
@@ -71,14 +72,10 @@ export function FriendlyWaste(): ReactElement {
         } 
 
         const sortedStats = [...companyStats].sort((a, b) => a!.Waste!.toNumber() - b!.Waste!.toNumber());
+        
+        setSortedCompanyStats(sortedStats);
 
-        // Early exit if the stats are already sorted
-        if (sortedStats === companyStats) {
-            return;
-        }
-        setCompanyStats(sortedStats);
-
-    }, []);
+    }, [companyStats]);
 
     function handleContractDeploy(event: MouseEvent<HTMLButtonElement>) {
         event.preventDefault();
@@ -361,7 +358,7 @@ export function FriendlyWaste(): ReactElement {
             </StyledButton>    
             <StyledLabel htmlFor="companyStats"> Registered Companies stats:</StyledLabel>
             <div>
-            {Object.entries(companyStats).map(([key, value]) => (
+            {Object.entries(sortedCompanyStats).map(([key, value]) => (
                 <div className="item" key={key}>
                     {value.Name?.toString()}&nbsp;
                     {value.Waste?.toNumber()}
