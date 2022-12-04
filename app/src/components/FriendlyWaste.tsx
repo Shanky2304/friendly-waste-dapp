@@ -47,6 +47,7 @@ export function FriendlyWaste(): ReactElement {
 
     const [signer, setSigner] = useState<Signer>();
     const [friendlyWasteContract, setFriendlyWasteContract] = useState<Contract>();
+    const [WacondaTokenContract, setWacondaTokenContract] = useState<Contract>();
     const [friendlyWasteConAddr, setfriendlyWasteConAddr] = useState<string>('');
     const [companyName, setcompanyName] = useState<string>('');
     //const [companyIndustry, setcompanyIndustry] = useState<string>('');
