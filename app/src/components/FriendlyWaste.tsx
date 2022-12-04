@@ -3,6 +3,7 @@ import {BigNumber, Contract, ethers, Signer } from "ethers";
 import {ChangeEvent, MouseEvent, ReactElement, useEffect, useState } from "react";
 import styled from "styled-components";
 import FriendlyWasteArtifact from "../artifacts/contracts/FriendlyWaste.sol/FriendlyWaste.json"
+import WacondaTokenArtifact from "../artifacts/contracts/WacondaToken.sol/WacondaToken.json"
 import { Provider } from "../utils/provider";
 import { Divider } from "./Divider";
 
@@ -43,12 +44,14 @@ export function FriendlyWaste(): ReactElement {
     };  
 
     const context = useWeb3React<Provider>();
-    const {library, active} = context
+    const {library, active, account} = context
 
     const [signer, setSigner] = useState<Signer>();
     const [friendlyWasteContract, setFriendlyWasteContract] = useState<Contract>();
     const [WacondaTokenContract, setWacondaTokenContract] = useState<Contract>();
     const [friendlyWasteConAddr, setfriendlyWasteConAddr] = useState<string>('');
+    const [balance, setBalance] = useState<string>();
+    const [totalTokens, setTotalTokens] = useState<number>(100);
     const [companyName, setcompanyName] = useState<string>('');
     //const [companyIndustry, setcompanyIndustry] = useState<string>('');
     const [registeredCompanies, setregisteredCompanies] = useState<string[]>([]);
@@ -57,6 +60,7 @@ export function FriendlyWaste(): ReactElement {
     const [addrToVerify, setAddrToVerify] = useState<string>();
     const [companyStats, setCompanyStats] = useState<Stats[]>([]);
     const [sortedCompanyStats, setSortedCompanyStats] = useState<Stats[]>([]);
+    const [admin, setadmin] = useState<string>();
 
     useEffect((): void => {
         if(!library) {
@@ -65,7 +69,21 @@ export function FriendlyWaste(): ReactElement {
         }
 
         setSigner(library.getSigner());
-    }, [library]);
+
+        async function getBalance(WacondaTokenContract: Contract): Promise<void> {
+            try {
+                const bal = await WacondaTokenContract.balanceOf(account);
+                setBalance(bal.toNumber());
+            } catch (error:any) {
+                window.alert('Error occurred: ' + (error && error.message ? `\n\n${error.message}` : ''));
+            }
+        }
+
+        if(WacondaTokenContract) {
+            getBalance(WacondaTokenContract);
+        }
+
+    }, [library, WacondaTokenContract]);
 
     useEffect((): void => {
         if (!companyStats || companyStats.length < 1) {
@@ -91,16 +109,27 @@ export function FriendlyWaste(): ReactElement {
                 FriendlyWasteArtifact.bytecode,
                 signer
             );
+            const Waconda = new ethers.ContractFactory(
+                WacondaTokenArtifact.abi,
+                WacondaTokenArtifact.bytecode,
+                signer
+            );
             try {
                 const fwContract = await FriendlyWaste.deploy();
-
+                const WACOContract = await Waconda.deploy(100);
+                
                 await fwContract.deployed();
+                await WACOContract.deployed();
 
                 setFriendlyWasteContract(fwContract);
+                setWacondaTokenContract(WACOContract)
 
                 window.alert(`FriendlyWaste deployed to: ${fwContract.address}`);
 
                 setfriendlyWasteConAddr(fwContract.address);
+                if (account) {
+                    setadmin(account);
+                }    
             } catch (error: any) {
                 window.alert('Error occurred: ' + (error && error.message ? `\n\n${error.message}` : ''));
             }
@@ -199,6 +228,7 @@ export function FriendlyWaste(): ReactElement {
             
         }
         updateStats(friendlyWasteContract);
+        setTotalTokens(totalTokens - 5);
     }
 
     function handleVerify(event: MouseEvent<HTMLButtonElement>) {
@@ -211,6 +241,10 @@ export function FriendlyWaste(): ReactElement {
             try {
                 const updateStatsTxn = await fwContract.verify(addrToVerify);
                 await updateStatsTxn.wait();
+                if (WacondaTokenContract) {
+                    WacondaTokenContract.transfer(addrToVerify, 5);
+                }
+                setTotalTokens(totalTokens - 5);
 
                 window.alert(`Verified successfully!`);
             } catch (error: any) {
@@ -269,6 +303,7 @@ export function FriendlyWaste(): ReactElement {
             </StyledButton>
             <Divider/>
             <StyledContractDiv>
+                <StyledLabel>Total Tokens: {totalTokens} </StyledLabel>
                 <StyledLabel>Contract Addr</StyledLabel>
                 <div>
                     {friendlyWasteConAddr ? (friendlyWasteConAddr) : (<em>{`Contract not deployed`}</em>)}
@@ -278,7 +313,15 @@ export function FriendlyWaste(): ReactElement {
                 <StyledInput id="companyName" 
                 type="text"
                 onChange={handleCompanyNameChange}/>
-            </StyledContractDiv>      
+            </StyledContractDiv>
+            <StyledContractDiv>
+                <div></div>
+                <StyledLabel htmlFor="companyTokens">Balance Tokens: </StyledLabel>
+                <div>
+                    {balance ? balance : 0}
+                </div>
+            </StyledContractDiv>  
+
             <StyledButton
                 disabled={!active || !friendlyWasteContract ? true : false}
                 style={{
