@@ -25,9 +25,7 @@ function Account(): ReactElement {
     return (
         <>
       <span>
-        <strong>Account: </strong>
-      </span>
-      <span role="img" aria-label="robot">
+        <strong color='#022B3A'>Account: </strong>
       </span>
       <span>
         {typeof account === 'undefined'

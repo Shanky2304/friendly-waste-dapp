@@ -1,9 +1,9 @@
 import { useWeb3React } from "@web3-react/core";
-import { use } from "chai";
-import { Contract, ethers, Signer } from "ethers";
+import {BigNumber, Contract, ethers, Signer } from "ethers";
 import {ChangeEvent, MouseEvent, ReactElement, useEffect, useState } from "react";
 import styled from "styled-components";
 import FriendlyWasteArtifact from "../artifacts/contracts/FriendlyWaste.sol/FriendlyWaste.json"
+import WacondaTokenArtifact from "../artifacts/contracts/WacondaToken.sol/WacondaToken.json"
 import { Provider } from "../utils/provider";
 import { Divider } from "./Divider";
 
@@ -14,6 +14,7 @@ const StyledButton = styled.button`
   border-color: yellow;
   cursor: pointer;
   place-self: center;
+  color:#B5FED9l
 `;
 
 const StyledContractDiv = styled.div`
@@ -27,6 +28,7 @@ const StyledContractDiv = styled.div`
 
 const StyledLabel = styled.label`
   font-weight: bold;
+  color:#022B3A;
 `;
 
 const StyledInput = styled.input`
@@ -36,18 +38,29 @@ const StyledInput = styled.input`
 
 export function FriendlyWaste(): ReactElement {
 
+    type Stats = {
+        Waste?: BigNumber;
+        Name?: string;
+    };  
+
     const context = useWeb3React<Provider>();
-    const {library, active} = context
+    const {library, active, account} = context
 
     const [signer, setSigner] = useState<Signer>();
     const [friendlyWasteContract, setFriendlyWasteContract] = useState<Contract>();
+    const [WacondaTokenContract, setWacondaTokenContract] = useState<Contract>();
     const [friendlyWasteConAddr, setfriendlyWasteConAddr] = useState<string>('');
+    const [balance, setBalance] = useState<string>();
+    const [totalTokens, setTotalTokens] = useState<number>(100);
     const [companyName, setcompanyName] = useState<string>('');
-    const [companyIndustry, setcompanyIndustry] = useState<string>('');
+    //const [companyIndustry, setcompanyIndustry] = useState<string>('');
     const [registeredCompanies, setregisteredCompanies] = useState<string[]>([]);
     const [companyFoodWaste, setCompanyFoodWaste] = useState<string>();
-    const [companyDesc, setCompanyDesc] = useState<string>();
+    //const [companyDesc, setCompanyDesc] = useState<string>();
     const [addrToVerify, setAddrToVerify] = useState<string>();
+    const [companyStats, setCompanyStats] = useState<Stats[]>([]);
+    const [sortedCompanyStats, setSortedCompanyStats] = useState<Stats[]>([]);
+    const [admin, setadmin] = useState<string>();
 
     useEffect((): void => {
         if(!library) {
@@ -56,7 +69,32 @@ export function FriendlyWaste(): ReactElement {
         }
 
         setSigner(library.getSigner());
-    }, [library]);
+
+        async function getBalance(WacondaTokenContract: Contract): Promise<void> {
+            try {
+                const bal = await WacondaTokenContract.balanceOf(account);
+                setBalance(bal.toNumber());
+            } catch (error:any) {
+                window.alert('Error occurred: ' + (error && error.message ? `\n\n${error.message}` : ''));
+            }
+        }
+
+        if(WacondaTokenContract) {
+            getBalance(WacondaTokenContract);
+        }
+
+    }, [library, WacondaTokenContract]);
+
+    useEffect((): void => {
+        if (!companyStats || companyStats.length < 1) {
+            return;
+        } 
+
+        const sortedStats = [...companyStats].sort((a, b) => a!.Waste!.toNumber() - b!.Waste!.toNumber());
+        
+        setSortedCompanyStats(sortedStats);
+
+    }, [companyStats]);
 
     function handleContractDeploy(event: MouseEvent<HTMLButtonElement>) {
         event.preventDefault();
@@ -71,16 +109,27 @@ export function FriendlyWaste(): ReactElement {
                 FriendlyWasteArtifact.bytecode,
                 signer
             );
+            const Waconda = new ethers.ContractFactory(
+                WacondaTokenArtifact.abi,
+                WacondaTokenArtifact.bytecode,
+                signer
+            );
             try {
                 const fwContract = await FriendlyWaste.deploy();
-
+                const WACOContract = await Waconda.deploy(100);
+                
                 await fwContract.deployed();
+                await WACOContract.deployed();
 
                 setFriendlyWasteContract(fwContract);
+                setWacondaTokenContract(WACOContract)
 
                 window.alert(`FriendlyWaste deployed to: ${fwContract.address}`);
 
                 setfriendlyWasteConAddr(fwContract.address);
+                if (account) {
+                    setadmin(account);
+                }    
             } catch (error: any) {
                 window.alert('Error occurred: ' + (error && error.message ? `\n\n${error.message}` : ''));
             }
@@ -90,15 +139,8 @@ export function FriendlyWaste(): ReactElement {
     }
 
     function handleCompanyNameChange(event: ChangeEvent<HTMLInputElement>) {
-
         event.preventDefault();
         setcompanyName(event.target.value);
-
-    }
-
-    function handleCompanyIndustryChange(event: ChangeEvent<HTMLInputElement>) {
-        event.preventDefault();
-        setcompanyIndustry(event.target.value);
     }
 
     function handleCompanyFoodWasteChange(event: ChangeEvent<HTMLInputElement>) {
@@ -106,10 +148,10 @@ export function FriendlyWaste(): ReactElement {
         setCompanyFoodWaste(event.target.value);
     }
 
-    function handleCompanyDescChange(event: ChangeEvent<HTMLInputElement>) {
-        event.preventDefault();
-        setCompanyDesc(event.target.value);
-    }
+    // function handleCompanyDescChange(event: ChangeEvent<HTMLInputElement>) {
+    //     event.preventDefault();
+    //     setCompanyDesc(event.target.value);
+    // }
 
     function handleAddrToVerifyChange(event: ChangeEvent<HTMLInputElement>) {
         event.preventDefault();
@@ -124,14 +166,14 @@ export function FriendlyWaste(): ReactElement {
             window.alert('Smart Contract undefined!');
             return;
         }
-        if (!companyName || !companyIndustry) {
+        if (!companyName) {
             window.alert('Company Name and Industry are required!');
             return;
         }
 
         async function register(fwContract: Contract): Promise<void> {
             try {
-                const registerTxn = await fwContract.register(companyName, companyIndustry);
+                const registerTxn = await fwContract.register(companyName, "Food");
                 await registerTxn.wait();
 
                 window.alert(`Registered Successfully!`);
@@ -176,7 +218,7 @@ export function FriendlyWaste(): ReactElement {
 
         async function updateStats(fwContract:Contract): Promise<void> {
             try {
-                const updateStatsTxn = await fwContract.updateCompanyStats(companyFoodWaste, companyDesc);
+                const updateStatsTxn = await fwContract.updateCompanyStats(companyFoodWaste);
                 await updateStatsTxn.wait();
 
                 window.alert(`Stats updated successfully!`);
@@ -186,6 +228,7 @@ export function FriendlyWaste(): ReactElement {
             
         }
         updateStats(friendlyWasteContract);
+        setTotalTokens(totalTokens - 5);
     }
 
     function handleVerify(event: MouseEvent<HTMLButtonElement>) {
@@ -198,6 +241,10 @@ export function FriendlyWaste(): ReactElement {
             try {
                 const updateStatsTxn = await fwContract.verify(addrToVerify);
                 await updateStatsTxn.wait();
+                if (WacondaTokenContract) {
+                    WacondaTokenContract.transfer(addrToVerify, 5);
+                }
+                setTotalTokens(totalTokens - 5);
 
                 window.alert(`Verified successfully!`);
             } catch (error: any) {
@@ -206,6 +253,40 @@ export function FriendlyWaste(): ReactElement {
             
         }
         verify(friendlyWasteContract);
+    }
+
+    function handleGetStats(event: MouseEvent<HTMLButtonElement>) {
+        event.preventDefault();
+
+        if(!friendlyWasteContract || !registeredCompanies) {
+            window.alert('Smart Contract or registeredCompanies undefined!');
+            return;
+        }
+
+        function getStats(fwContract:Contract) {
+            try {
+                var statList: Stats[] = []
+                registeredCompanies.forEach(async function (regCompany) : Promise<void> {
+                    const stats = await fwContract.getCompanyStats(regCompany);
+                    console.log(`Stats: ` + stats);
+                    var statObj : Stats = {
+                        Waste : stats[0],
+                        Name : stats[1]
+                    };
+                    console.log(`Stat Obj: ` + statList);
+                    statList = statList.concat(statObj);
+                    setCompanyStats(statList);
+                    console.log(`Stat Obj: ` + companyStats);
+                });
+                // console.log(`companyStats: ` + statList);
+                window.alert(`All stats updated successfully!`);
+                // setCompanyStats(statList);
+                // console.log(`companyStats: ` + companyStats);
+            } catch (error: any) {
+                window.alert('Error occurred: ' + (error && error.message ? `\n\n${error.message}` : ''));
+            }
+        }
+        getStats(friendlyWasteContract);
     }
 
     return (
@@ -222,6 +303,7 @@ export function FriendlyWaste(): ReactElement {
             </StyledButton>
             <Divider/>
             <StyledContractDiv>
+                <StyledLabel>Total Tokens: {totalTokens} </StyledLabel>
                 <StyledLabel>Contract Addr</StyledLabel>
                 <div>
                     {friendlyWasteConAddr ? (friendlyWasteConAddr) : (<em>{`Contract not deployed`}</em>)}
@@ -231,12 +313,15 @@ export function FriendlyWaste(): ReactElement {
                 <StyledInput id="companyName" 
                 type="text"
                 onChange={handleCompanyNameChange}/>
+            </StyledContractDiv>
+            <StyledContractDiv>
                 <div></div>
-                <StyledLabel htmlFor="companyIndustry">Enter company Industry:</StyledLabel>
-                <StyledInput id="companyIndustry" 
-                type="text"
-                onChange={handleCompanyIndustryChange}/>
-            </StyledContractDiv>      
+                <StyledLabel htmlFor="companyTokens">Balance Tokens: </StyledLabel>
+                <div>
+                    {balance ? balance : 0}
+                </div>
+            </StyledContractDiv>  
+
             <StyledButton
                 disabled={!active || !friendlyWasteContract ? true : false}
                 style={{
@@ -287,15 +372,13 @@ export function FriendlyWaste(): ReactElement {
             <StyledContractDiv>
                 <StyledLabel htmlFor="companyFoodWaste">Enter company foodWaste(in Tons):</StyledLabel>
                 <StyledInput id="companyFoodWaste" 
-                type="text"
+                type="number"
                 onChange={handleCompanyFoodWasteChange}/>
-                <div></div>
-                <StyledLabel htmlFor="companyDesc">Enter Desc:</StyledLabel>
+                {/* <StyledLabel htmlFor="companyDesc">Enter Desc:</StyledLabel>
                 <StyledInput id="companyDesc" 
                 type="text"
-                onChange={handleCompanyDescChange}/>
+                onChange={handleCompanyDescChange}/> */}
             </StyledContractDiv>
-            <div></div>
             <StyledButton
                 disabled={!active || !friendlyWasteContract ? true : false}
                 style={{
@@ -306,7 +389,30 @@ export function FriendlyWaste(): ReactElement {
             >
             Update Stats    
             </StyledButton>
-
+            <div></div>
+            <StyledButton
+                disabled={!active || !friendlyWasteContract ? true : false}
+                style={{
+                    cursor: !active || !friendlyWasteContract ? 'not-allowed' : 'pointer',
+                    borderColor: !active || !friendlyWasteContract ? 'unset' : 'yellow'
+                }}
+                onClick={handleGetStats}
+            >
+            Get Stats  
+            </StyledButton>    
+            <StyledLabel htmlFor="companyStats"> Registered Companies stats:</StyledLabel>
+            <div>
+            {Object.entries(sortedCompanyStats).map(([key, value]) => (
+                <div className="item" key={key}>
+                    {value.Name?.toString()}&nbsp;
+                    {value.Waste?.toNumber()}
+                </div>
+                )
+            )}
+            {/* companyStats?.Waste?.toNumber()
+            }&nbsp;
+            {companyStats?.Name?.toString()} */}
+            </div>
         </>
     );
 }
