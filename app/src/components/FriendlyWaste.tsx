@@ -51,7 +51,7 @@ export function FriendlyWaste(): ReactElement {
     const [WacondaTokenContract, setWacondaTokenContract] = useState<Contract>();
     const [friendlyWasteConAddr, setfriendlyWasteConAddr] = useState<string>('');
     const [balance, setBalance] = useState<string>();
-    const [totalTokens, setTotalTokens] = useState<number>(100);
+    const [totalTokens, setTotalTokens] = useState<number>();
     const [companyName, setcompanyName] = useState<string>('');
     //const [companyIndustry, setcompanyIndustry] = useState<string>('');
     const [registeredCompanies, setregisteredCompanies] = useState<string[]>([]);
@@ -60,7 +60,6 @@ export function FriendlyWaste(): ReactElement {
     const [addrToVerify, setAddrToVerify] = useState<string>();
     const [companyStats, setCompanyStats] = useState<Stats[]>([]);
     const [sortedCompanyStats, setSortedCompanyStats] = useState<Stats[]>([]);
-    const [admin, setadmin] = useState<string>();
 
     useEffect((): void => {
         if(!library) {
@@ -74,6 +73,9 @@ export function FriendlyWaste(): ReactElement {
             try {
                 const bal = await WacondaTokenContract.balanceOf(account);
                 setBalance(bal.toNumber());
+
+                const supply = await WacondaTokenContract.totalSupply();
+                setTotalTokens(supply.toNumber());
             } catch (error:any) {
                 window.alert('Error occurred: ' + (error && error.message ? `\n\n${error.message}` : ''));
             }
@@ -127,9 +129,9 @@ export function FriendlyWaste(): ReactElement {
                 window.alert(`FriendlyWaste deployed to: ${fwContract.address}`);
 
                 setfriendlyWasteConAddr(fwContract.address);
-                if (account) {
-                    setadmin(account);
-                }    
+                // if (account) {
+                //     setadmin(account);
+                // }    
             } catch (error: any) {
                 window.alert('Error occurred: ' + (error && error.message ? `\n\n${error.message}` : ''));
             }
@@ -228,7 +230,6 @@ export function FriendlyWaste(): ReactElement {
             
         }
         updateStats(friendlyWasteContract);
-        setTotalTokens(totalTokens - 5);
     }
 
     function handleVerify(event: MouseEvent<HTMLButtonElement>) {
@@ -244,7 +245,9 @@ export function FriendlyWaste(): ReactElement {
                 if (WacondaTokenContract) {
                     WacondaTokenContract.transfer(addrToVerify, 5);
                 }
-                setTotalTokens(totalTokens - 5);
+                if (totalTokens) {
+                    setTotalTokens(totalTokens - 5);
+                }
 
                 window.alert(`Verified successfully!`);
             } catch (error: any) {
@@ -299,11 +302,14 @@ export function FriendlyWaste(): ReactElement {
                 }}
                 onClick={handleContractDeploy}
             >
-            Deploy FriendlyWaste Contract    
+            Deploy FriendlyWaste Contracts    
             </StyledButton>
             <Divider/>
             <StyledContractDiv>
-                <StyledLabel>Total Tokens: {totalTokens} </StyledLabel>
+                <StyledLabel>Token Supply     (in WACO): </StyledLabel>
+                {totalTokens ? (totalTokens) : (<em>{`Contract not deployed`}</em>)}
+            </StyledContractDiv>
+            <StyledContractDiv>
                 <StyledLabel>Contract Addr</StyledLabel>
                 <div>
                     {friendlyWasteConAddr ? (friendlyWasteConAddr) : (<em>{`Contract not deployed`}</em>)}
@@ -315,11 +321,8 @@ export function FriendlyWaste(): ReactElement {
                 onChange={handleCompanyNameChange}/>
             </StyledContractDiv>
             <StyledContractDiv>
-                <div></div>
                 <StyledLabel htmlFor="companyTokens">Balance Tokens: </StyledLabel>
-                <div>
                     {balance ? balance : 0}
-                </div>
             </StyledContractDiv>  
 
             <StyledButton
